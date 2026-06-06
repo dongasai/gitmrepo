@@ -136,6 +136,8 @@ settings:
 
 ## 安装与构建
 
+详细安装说明请查看 [docs/installation.md](docs/installation.md)。
+
 ### 从源码构建
 
 ```bash

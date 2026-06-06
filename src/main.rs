@@ -1,6 +1,9 @@
 use clap::Parser;
 use git_mrepo::cli::Commands;
-use git_mrepo::commands::init_execute;
+use git_mrepo::commands::{
+    add_execute, clone_execute, fetch_execute, init_execute, pull_execute, push_execute,
+    status_execute, sync_execute,
+};
 
 #[derive(Parser)]
 #[command(name = "git-mrepo")]
@@ -18,79 +21,104 @@ fn main() {
     match cli.command {
         Commands::Init => {
             if let Err(e) = init_execute() {
-                println!("❌ {}", e);
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
         }
         Commands::Clone { url, dir, branch } => {
-            println!("克隆模块仓库: {}", url);
-            if let Some(d) = dir {
-                println!("目标目录: {}", d);
+            if let Err(e) = clone_execute(url, dir, branch) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            if let Some(b) = branch {
-                println!("分支: {}", b);
-            }
-            // TODO: 实现 clone 命令
-        }
-        Commands::Attach { url, dir, branch } => {
-            println!("关联目录到远程仓库: {} -> {}", dir, url);
-            if let Some(b) = branch {
-                println!("分支: {}", b);
-            }
-            // TODO: 实现 attach 命令
         }
         Commands::Add { dir } => {
-            println!("注册已有仓库: {}", dir);
-            // TODO: 实现 add 命令
-        }
-        Commands::Sync { force } => {
-            println!("同步所有模块仓库");
-            if force {
-                println!("强制模式");
+            if let Err(e) = add_execute(dir) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            // TODO: 实现 sync 命令
-        }
-        Commands::Sync2 { module } => {
-            if let Some(m) = module {
-                println!("从 {} 同步配置信息", m);
-            } else {
-                println!("从所有子仓库同步配置信息");
-            }
-            // TODO: 实现 sync2 命令
-        }
-        Commands::Pull { module } => {
-            if let Some(m) = module {
-                println!("拉取模块: {}", m);
-            } else {
-                println!("拉取所有模块");
-            }
-            // TODO: 实现 pull 命令
-        }
-        Commands::Push { module } => {
-            if let Some(m) = module {
-                println!("推送模块: {}", m);
-            } else {
-                println!("推送所有模块");
-            }
-            // TODO: 实现 push 命令
-        }
-        Commands::Fetch { module } => {
-            if let Some(m) = module {
-                println!("获取模块远程信息: {}", m);
-            } else {
-                println!("获取所有模块远程信息");
-            }
-            // TODO: 实现 fetch 命令
         }
         Commands::Status { module } => {
-            if let Some(m) = module {
-                println!("查看模块状态: {}", m);
-            } else {
-                println!("查看所有模块状态");
+            if let Err(e) = status_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            // TODO: 实现 status 命令
         }
-        _ => {
-            println!("其他命令待实现");
+        Commands::Sync { force } => {
+            if let Err(e) = sync_execute(force) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Pull { module } => {
+            if let Err(e) = pull_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Push { module } => {
+            if let Err(e) = push_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Fetch { module } => {
+            if let Err(e) = fetch_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
+            }
+        }
+        Commands::Attach { url, dir, branch } => {
+            eprintln!("⚠️  attach 命令开发中...");
+            eprintln!("目标: 关联目录 {} 到远程仓库 {}", dir, url);
+            if let Some(b) = branch {
+                eprintln!("分支: {}", b);
+            }
+            std::process::exit(1);
+        }
+        Commands::Sync2 { module } => {
+            eprintln!("⚠️  sync2 命令开发中...");
+            if let Some(m) = module {
+                eprintln!("目标: 从 {} 同步配置信息", m);
+            } else {
+                eprintln!("目标: 从所有子仓库同步配置信息");
+            }
+            std::process::exit(1);
+        }
+        Commands::Branch { module } => {
+            eprintln!("⚠️  branch 命令开发中...");
+            if let Some(m) = module {
+                eprintln!("目标: 查看或管理模块仓库分支: {}", m);
+            } else {
+                eprintln!("目标: 查看或管理所有模块仓库分支");
+            }
+            std::process::exit(1);
+        }
+        Commands::Commit { module } => {
+            eprintln!("⚠️  commit 命令开发中...");
+            if let Some(m) = module {
+                eprintln!("目标: 在模块仓库 {} 中创建提交", m);
+            } else {
+                eprintln!("目标: 在所有模块仓库中创建提交");
+            }
+            std::process::exit(1);
+        }
+        Commands::Config { module } => {
+            eprintln!("⚠️  config 命令开发中...");
+            if let Some(m) = module {
+                eprintln!("目标: 配置模块仓库 {} 的参数", m);
+            } else {
+                eprintln!("目标: 配置所有模块仓库的参数");
+            }
+            std::process::exit(1);
+        }
+        Commands::Clean { module } => {
+            eprintln!("⚠️  clean 命令开发中...");
+            if let Some(m) = module {
+                eprintln!("目标: 清理模块仓库 {} 的未跟踪文件", m);
+            } else {
+                eprintln!("目标: 清理所有模块仓库的未跟踪文件");
+            }
+            std::process::exit(1);
         }
     }
 }
