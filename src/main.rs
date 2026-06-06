@@ -2,7 +2,7 @@ use clap::Parser;
 use git_mrepo::cli::Commands;
 use git_mrepo::commands::{
     add_execute, clone_execute, fetch_execute, init_execute, pull_execute, push_execute,
-    status_execute, sync_execute,
+    status_execute, sync_execute, sync2_execute,
 };
 
 #[derive(Parser)]
@@ -76,13 +76,10 @@ fn main() {
             std::process::exit(1);
         }
         Commands::Sync2 { module } => {
-            eprintln!("⚠️  sync2 命令开发中...");
-            if let Some(m) = module {
-                eprintln!("目标: 从 {} 同步配置信息", m);
-            } else {
-                eprintln!("目标: 从所有子仓库同步配置信息");
+            if let Err(e) = sync2_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            std::process::exit(1);
         }
         Commands::Branch { module } => {
             eprintln!("⚠️  branch 命令开发中...");

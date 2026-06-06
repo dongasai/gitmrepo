@@ -6,6 +6,7 @@ pub mod pull;
 pub mod push;
 pub mod status;
 pub mod sync;
+pub mod sync2;
 
 pub use add::execute as add_execute;
 pub use clone::execute as clone_execute;
@@ -15,3 +16,4 @@ pub use pull::execute as pull_execute;
 pub use push::execute as push_execute;
 pub use status::execute as status_execute;
 pub use sync::execute as sync_execute;
+pub use sync2::execute as sync2_execute;
