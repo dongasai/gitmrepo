@@ -1,0 +1,14 @@
+[package]
+name = "version-manager"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "version-manager"
+path = "src/main.rs"
+
+[dependencies]
+toml_edit = "0.21"
+semver = "1"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
