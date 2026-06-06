@@ -1,0 +1,6 @@
+version: '1.0'
+modules: {}
+settings:
+  default_branch: main
+  show_all_modules_in_status: true
+  auto_ignore_git: true
