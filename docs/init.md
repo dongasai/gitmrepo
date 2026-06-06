@@ -27,27 +27,36 @@ git mrepo init
 
 ```bash
 $ git mrepo init
-✅ 初始化完成
-   配置文件: .gitmrepo
-   Git 忽略: .gitignore（已添加模块仓库忽略规则）
-
-💡 后续操作：
-   git mrepo clone <url>     克隆模块仓库
-   git mrepo add <dir>       注册已有模块仓库
+✅ 已创建 .gitmrepo 配置文件
+💡 提示：.gitmrepo 应提交到主仓库，让团队成员共享模块配置
 ```
 
 ## 配置文件结构
 
 ```yaml
-version: "1.0"
-modules: []
+version: '1.0'
+modules: {}
 settings:
-  default_branch: "main"
+  default_branch: main
   show_all_modules_in_status: true
   auto_ignore_git: true
 ```
 
 ## 注意事项
+
+### .gitmrepo 应该提交
+
+**重要**：.gitmrepo 是项目级别的配置文件，应该提交到主仓库：
+
+- ✅ 记录项目的模块仓库配置（URL、路径、分支）
+- ✅ 团队成员共享同样的模块配置
+- ✅ 新成员克隆项目后，通过 `git mrepo sync` 一键同步所有模块
+
+类比：
+- `.gitmrepo` ≈ `package.json`（Node.js）- 项目依赖配置
+- `.gitmrepo` ≈ `requirements.txt`（Python）- 项目依赖清单
+
+**不要忽略 .gitmrepo！**
 
 - 必须在 Git 仓库根目录执行
 - 会自动更新 `.gitignore` 文件
