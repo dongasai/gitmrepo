@@ -1,8 +1,8 @@
 use clap::Parser;
 use git_mrepo::cli::Commands;
 use git_mrepo::commands::{
-    add_execute, clone_execute, fetch_execute, init_execute, pull_execute, push_execute,
-    status_execute, sync_execute, sync2_execute,
+    add_execute, attach_execute, clone_execute, fetch_execute, init_execute, pull_execute,
+    push_execute, status_execute, sync_execute, sync2_execute,
 };
 
 #[derive(Parser)]
@@ -68,12 +68,10 @@ fn main() {
             }
         }
         Commands::Attach { url, dir, branch } => {
-            eprintln!("⚠️  attach 命令开发中...");
-            eprintln!("目标: 关联目录 {} 到远程仓库 {}", dir, url);
-            if let Some(b) = branch {
-                eprintln!("分支: {}", b);
+            if let Err(e) = attach_execute(url, dir, branch) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            std::process::exit(1);
         }
         Commands::Sync2 { module } => {
             if let Err(e) = sync2_execute(module) {

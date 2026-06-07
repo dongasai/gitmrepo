@@ -1,4 +1,5 @@
 pub mod add;
+pub mod attach;
 pub mod clone;
 pub mod fetch;
 pub mod init;
@@ -9,6 +10,7 @@ pub mod sync;
 pub mod sync2;
 
 pub use add::execute as add_execute;
+pub use attach::execute as attach_execute;
 pub use clone::execute as clone_execute;
 pub use fetch::execute as fetch_execute;
 pub use init::execute as init_execute;
