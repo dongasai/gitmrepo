@@ -1,6 +1,10 @@
 pub mod add;
 pub mod attach;
+pub mod branch;
+pub mod clean;
 pub mod clone;
+pub mod commit;
+pub mod config;
 pub mod fetch;
 pub mod init;
 pub mod pull;
@@ -11,7 +15,11 @@ pub mod sync2;
 
 pub use add::execute as add_execute;
 pub use attach::execute as attach_execute;
+pub use branch::execute as branch_execute;
+pub use clean::execute as clean_execute;
 pub use clone::execute as clone_execute;
+pub use commit::execute as commit_execute;
+pub use config::execute as config_execute;
 pub use fetch::execute as fetch_execute;
 pub use init::execute as init_execute;
 pub use pull::execute as pull_execute;

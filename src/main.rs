@@ -1,8 +1,9 @@
 use clap::Parser;
 use git_mrepo::cli::Commands;
 use git_mrepo::commands::{
-    add_execute, attach_execute, clone_execute, fetch_execute, init_execute, pull_execute,
-    push_execute, status_execute, sync_execute, sync2_execute,
+    add_execute, attach_execute, branch_execute, clean_execute, clone_execute, commit_execute,
+    config_execute, fetch_execute, init_execute, pull_execute, push_execute, status_execute,
+    sync_execute, sync2_execute,
 };
 
 #[derive(Parser)]
@@ -80,40 +81,28 @@ fn main() {
             }
         }
         Commands::Branch { module } => {
-            eprintln!("⚠️  branch 命令开发中...");
-            if let Some(m) = module {
-                eprintln!("目标: 查看或管理模块仓库分支: {}", m);
-            } else {
-                eprintln!("目标: 查看或管理所有模块仓库分支");
+            if let Err(e) = branch_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            std::process::exit(1);
         }
         Commands::Commit { module } => {
-            eprintln!("⚠️  commit 命令开发中...");
-            if let Some(m) = module {
-                eprintln!("目标: 在模块仓库 {} 中创建提交", m);
-            } else {
-                eprintln!("目标: 在所有模块仓库中创建提交");
+            if let Err(e) = commit_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            std::process::exit(1);
         }
         Commands::Config { module } => {
-            eprintln!("⚠️  config 命令开发中...");
-            if let Some(m) = module {
-                eprintln!("目标: 配置模块仓库 {} 的参数", m);
-            } else {
-                eprintln!("目标: 配置所有模块仓库的参数");
+            if let Err(e) = config_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            std::process::exit(1);
         }
         Commands::Clean { module } => {
-            eprintln!("⚠️  clean 命令开发中...");
-            if let Some(m) = module {
-                eprintln!("目标: 清理模块仓库 {} 的未跟踪文件", m);
-            } else {
-                eprintln!("目标: 清理所有模块仓库的未跟踪文件");
+            if let Err(e) = clean_execute(module) {
+                eprintln!("❌ {}", e);
+                std::process::exit(1);
             }
-            std::process::exit(1);
         }
     }
 }
