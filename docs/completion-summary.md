@@ -2,11 +2,11 @@
 
 **日期**: 2026-06-07
 
-**状态**: 核心功能全部实现 ✅
+**状态**: 9个核心命令已实现 ✅
 
 ---
 
-## 已实现命令（8 个）
+## 已实现命令（9 个）
 
 ### 1. **init** - 初始化配置文件 ✅
 
@@ -315,7 +315,38 @@ let statuses = repo.statuses(None)?;
 
 ---
 
-## 待实现命令（6 个）
+### 9. **sync2** - 从子仓库同步配置 ✅
+
+**文件**: [src/commands/sync2.rs](../src/commands/sync2.rs)
+
+**功能**:
+- ✅ 读取子仓库实际分支（从 `.git/HEAD`)
+- ✅ 读取子仓库实际远程 URL（从 `.git/config`)
+- ✅ 对比配置文件信息，自动更新过时数据
+- ✅ 支持单个模块或所有模块同步
+- ✅ 统计更新数量和一致数量
+
+**测试**:
+```bash
+$ git mrepo sync2
+🔄 从子仓库同步配置信息...
+
+[auth-service] modules/auth:
+  当前分支: develop (配置: main) → 已更新
+  远程 URL: https://github.com/org/auth-service.git (一致)
+
+[user-service] modules/user:
+  当前分支: main (一致)
+  远程 URL: https://github.com/org/new-user-service.git (配置: https://github.com/org/user-service.git) → 已更新
+
+✅ 同步完成
+   更新: 2
+   一致: 1
+```
+
+---
+
+## 待实现命令（5 个）
 
 ### 中优先级
 
@@ -453,7 +484,7 @@ git mrepo fetch auth-service
 
 ## 总结
 
-**已完成**: 8 个核心命令（init、clone、add、status、sync、pull、push、fetch）
+**已完成**: 9 个核心命令（init、clone、add、status、sync、sync2、pull、push、fetch）
 
 **代码质量**: ✅
 - 单元测试覆盖
@@ -466,4 +497,4 @@ git mrepo fetch auth-service
 - 机制文档清晰
 - 使用流程完整
 
-**下一步**: 实现 sync2、attach 命令，完善配置同步和目录关联功能。
+**下一步**: 实现 attach 命令，完善目录关联功能。
