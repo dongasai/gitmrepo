@@ -1,5 +1,5 @@
 {
-  "name": "@aspect/git-mrepo",
+  "name": "git-mrepo",
   "version": "0.2.1",
   "description": "Git multi-repository management tool - manages modular Git repositories",
   "keywords": [
@@ -9,13 +9,13 @@
     "submodule",
     "cli"
   ],
-  "homepage": "https://github.com/your-org/git-mrepo",
+  "homepage": "https://github.com/dongasai/gitmrepo",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/git-mrepo.git"
+    "url": "https://github.com/dongasai/gitmrepo.git"
   },
   "license": "MIT",
-  "author": "Your Name",
+  "author": "dongasai",
   "bin": {
     "git-mrepo": "./bin/git-mrepo.js"
   },
