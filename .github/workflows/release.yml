@@ -76,18 +76,31 @@ jobs:
       contents: write
     steps:
       - name: Download all binaries
+        continue-on-error: true
         run: |
           mkdir -p dist
           for artifact in git-mrepo-linux-x64 git-mrepo-linux-arm64 git-mrepo-darwin-x64 git-mrepo-darwin-arm64 git-mrepo-win32-x64.exe; do
             echo "Downloading $artifact..."
             gh run download ${{ github.run_id }} -n "$artifact" --dir dist || echo "Warning: $artifact not found"
           done
-          chmod +x dist/git-mrepo-*
+          # 设置权限（忽略不存在的文件）
+          chmod +x dist/git-mrepo-* 2>/dev/null || true
           ls -la dist/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check binaries exist
+        id: check
+        run: |
+          if [ -n "$(ls -A dist/ 2>/dev/null)" ]; then
+            echo "has_files=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_files=false" >> $GITHUB_OUTPUT
+            echo "Warning: No binaries to release"
+          fi
+
       - name: Create GitHub Release
+        if: steps.check.outputs.has_files == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
