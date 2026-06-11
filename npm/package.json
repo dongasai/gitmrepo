@@ -1,0 +1,41 @@
+{
+  "name": "@aspect/git-mrepo",
+  "version": "0.2.1",
+  "description": "Git multi-repository management tool - manages modular Git repositories",
+  "keywords": [
+    "git",
+    "monorepo",
+    "multi-repo",
+    "submodule",
+    "cli"
+  ],
+  "homepage": "https://github.com/your-org/git-mrepo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/git-mrepo.git"
+  },
+  "license": "MIT",
+  "author": "Your Name",
+  "bin": {
+    "git-mrepo": "./bin/git-mrepo.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}

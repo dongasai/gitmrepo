@@ -1,0 +1,7 @@
+# 忽略下载的临时二进制文件
+bin/git-mrepo-*
+!bin/git-mrepo.js
+
+# npm 相关
+node_modules/
+package-lock.json
