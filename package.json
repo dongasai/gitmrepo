@@ -1,0 +1,24 @@
+{
+  "name": "git-mrepo",
+  "version": "1.0.0",
+  "description": "Git 模块化仓库管理工具",
+  "type": "module",
+  "bin": { "git-mrepo": "./bin/git-mrepo.js" },
+  "files": ["bin/", "dist/"],
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --target node18 --outDir dist",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "js-yaml": "^4.1.0",
+    "simple-git": "^3.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "tsup": "^8.1.0",
+    "@types/node": "^20.14.0",
+    "@types/js-yaml": "^4.0.9"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

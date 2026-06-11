@@ -1,26 +1,17 @@
-# git-mrepo 项目配置文件应该提交（团队成员共享）
-# .gitmrepo 记录项目的模块仓库配置（URL、路径、分支）
-# 类似于 package.json 或 requirements.txt
+# npm
+node_modules/
+package-lock.json
+dist/
 
-# Rust 编译产物
-target/
-**/*.rs.bk
-*.pdb
-
-# IDE 和编辑器
+# IDE
 .idea/
 .vscode/
 *.swp
-*.swo
 *~
-# 项目测试目录
-demo
 
-# 操作系统
+# OS
 .DS_Store
 Thumbs.db
 
-# Cargo 锁文件（应用项目应该提交，库项目应该忽略）
-# git-mrepo 是 CLI 应用，所以提交 Cargo.lock
-# 如果是库项目，取消下面的注释
-# Cargo.lock
+# 项目测试目录
+demo
