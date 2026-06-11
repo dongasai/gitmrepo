@@ -22,17 +22,17 @@ jobs:
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             output: git-mrepo-linux-arm64
-          # macOS ARM
+          # macOS
+          - os: macos-13
+            target: x86_64-apple-darwin
+            output: git-mrepo-darwin-x64
           - os: macos-latest
             target: aarch64-apple-darwin
             output: git-mrepo-darwin-arm64
-          # TODO: 以下平台待修复
-          # - os: macos-13
-          #   target: x86_64-apple-darwin
-          #   output: git-mrepo-darwin-x64
-          # - os: windows-latest
-          #   target: x86_64-pc-windows-msvc
-          #   output: git-mrepo-win32-x64.exe
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            output: git-mrepo-win32-x64.exe
 
     steps:
       - name: Checkout
