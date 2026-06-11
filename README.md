@@ -10,16 +10,18 @@
 
 ## 技术选型
 
-- **实现语言**: Rust
+- **实现语言**: TypeScript (ESM)
+- **运行环境**: Node.js >= 18
 - **命令形式**: Git 子命令 (`git-mrepo`)
 - **调用方式**: `git mrepo <command>` (符合 Git 用户习惯)
+- **分发方式**: npm 全局安装
 
 ### 优势
 
-- ✅ 编译型语言，性能卓越，适合频繁 Git 操作
-- ✅ 单文件分发，无需安装 Node.js/Python 等运行时环境
-- ✅ 真正通用，适合所有 Git 用户
-- ✅ 内存安全，错误处理完善，适合文件系统操作
+- ✅ TypeScript 类型安全，维护简单
+- ✅ npm 一键安装，无需编译
+- ✅ 单文件构建（dist/cli.js ~40KB），启动快
+- ✅ 依赖少（commander + js-yaml + simple-git）
 
 ## 命令规划
 
@@ -134,27 +136,21 @@ settings:
 4. **同步操作**: `pull/push/fetch` 等命令操作模块仓库的 Git 状态
 5. **状态查看**: `status` 同时显示主仓库和模块仓库的状态
 
-## 安装与构建
+## 安装
 
-详细安装说明请查看 [docs/installation.md](docs/installation.md)。
+```bash
+npm install -g git-mrepo
+```
 
 ### 从源码构建
 
 ```bash
-# 克隆仓库
 git clone https://github.com/your-org/git-mrepo.git
 cd git-mrepo
-
-# 构建
-cargo build --release
-
-# 安装到系统（将二进制文件放入 PATH）
-cargo install --path .
+npm install
+npm run build
+npm link  # 本地开发
 ```
-
-### 预编译二进制
-
-从 Release 页面下载对应平台的预编译二进制文件，放入 PATH 目录即可。
 
 ## 技术实现
 
@@ -162,62 +158,39 @@ cargo install --path .
 
 **双层实现架构**：
 - **核心 Git 操作**：调用系统 `git` 命令（pull、push、clone、commit、branch）
-- **辅助功能**：使用 `git2` 库（状态检查、配置读取、快速验证）
+- **辅助功能**：使用 `simple-git` 库（状态检查、分支列表）
 
 ### 实现原理
 
-```rust
+```typescript
 // 核心 Git 操作：调用 git 命令
-pub fn mrepo_pull(module_name: &str) -> Result<()> {
-    let module = config.find_module(module_name)?;
-
-    Command::new("git")
-        .current_dir(&module.path)  // 在子目录执行
-        .args(&["pull", "origin", &module.branch])
-        .output()?;
+export function pullModule(modulePath: string, branch: string): void {
+  execSync(`git pull origin ${branch}`, { cwd: modulePath, stdio: 'inherit' });
 }
 
-// 辅助功能：使用 git2 库
-pub fn check_uncommitted_changes(module_path: &str) -> Result<bool> {
-    let repo = git2::Repository::open(module_path)?;
-    let statuses = repo.statuses(None)?;
-
-    for entry in statuses.iter() {
-        if entry.status().contains(git2::Status::WT_MODIFIED) {
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
+// 辅助功能：使用 simple-git 库
+export async function hasUncommittedChanges(repoPath: string): Promise<boolean> {
+  const git = simpleGit(repoPath);
+  const status = await git.status();
+  return !status.isClean();
 }
 ```
-
-### 优势
-
-- ✅ **实现简单**：核心操作 5 行代码，无需处理 Git 边界情况
-- ✅ **功能完整**：支持所有 Git 特性（用户熟悉的 git 命令）
-- ✅ **错误直观**：直接显示 git 的输出信息
-- ✅ **性能平衡**：核心操作用 git 命令，状态检查用 git2 快速验证
 
 ### 技术栈
 
-```toml
-[dependencies]
-clap = { version = "4", features = ["derive"] }  # CLI 命令解析
-serde = { version = "1", features = ["derive"] } # 序列化
-serde_yaml = "0.9"                                # YAML 配置文件
-git2 = { version = "0.18", features = ["vendored"] } # Git 辅助功能
-anyhow = "1"                                      # 错误处理
-thiserror = "1"                                   # 自定义错误类型
+```json
+{
+  "commander": "^12.1.0",     // CLI 命令解析
+  "js-yaml": "^4.1.0",        // YAML 配置文件
+  "simple-git": "^3.25.0",    // Git 辅助操作
+  "tsup": "^8.1.0"            // 构建工具（单文件 ESM）
+}
 ```
 
-## 开发计划
+## 开发状态
 
-- [ ] 项目结构搭建（Cargo 配置、基础模块）
-- [ ] CLI 命令解析（clap）
-- [ ] 配置文件解析（serde_yaml）
-- [ ] 核心命令实现（init、clone、pull、push）
-- [ ] 状态检查功能（git2）
-- [ ] Git Hooks 自动安装
-- [ ] 测试与文档
-- [ ] CI/CD 与发布流程
+- [x] 项目结构搭建（TypeScript + tsup）
+- [x] CLI 命令解析（commander）
+- [x] 配置文件解析（js-yaml）
+- [x] 全部 14 个命令实现
+- [x] npm 发布
