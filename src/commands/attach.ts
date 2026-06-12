@@ -41,24 +41,43 @@ export async function attachExecute(url: string, dir: string, branch?: string): 
     throw new Error(`git remote add 失败: ${e.stderr?.toString() || e.message}`);
   }
 
-  // 设置分支
+  // fetch 远程
+  console.log('获取远程信息...');
+  try {
+    execSync('git fetch origin', { cwd: dir, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+  } catch (e: any) {
+    // fetch 失败可能是远程不存在或网络问题，继续尝试本地分支
+    console.log(`   ⚠️  fetch 失败: ${e.stderr?.toString() || e.message}`);
+  }
+
+  // 设置分支（尝试追踪远程分支）
   let actualBranch: string;
-  if (branch) {
-    console.log(`设置分支: ${branch}`);
-    try {
-      execSync(`git checkout -b "${branch}"`, { cwd: dir, encoding: 'utf-8' });
-    } catch (e: any) {
-      throw new Error(`创建分支失败: ${e.stderr?.toString() || e.message}`);
+  const targetBranch = branch || 'main';
+
+  // 检查远程是否有该分支
+  try {
+    const remoteBranches = execSync('git branch -r', { cwd: dir, encoding: 'utf-8' }).trim();
+    const hasRemoteBranch = remoteBranches.includes(`origin/${targetBranch}`);
+
+    if (hasRemoteBranch) {
+      console.log(`检出远程分支: ${targetBranch}`);
+      execSync(`git checkout -b "${targetBranch}" --track "origin/${targetBranch}"`, { cwd: dir, encoding: 'utf-8' });
+      actualBranch = targetBranch;
+    } else {
+      // 远程没有该分支，创建本地分支
+      console.log(`创建本地分支: ${targetBranch}`);
+      execSync(`git checkout -b "${targetBranch}"`, { cwd: dir, encoding: 'utf-8' });
+      actualBranch = targetBranch;
     }
-    actualBranch = branch;
-  } else {
-    actualBranch = 'main';
-    console.log(`使用默认分支: ${actualBranch}`);
+  } catch (e: any) {
+    // fallback: 直接创建本地分支
+    console.log(`   ⚠️  分支操作失败，创建默认分支: ${targetBranch}`);
     try {
-      execSync('git branch -M main', { cwd: dir, encoding: 'utf-8' });
+      execSync(`git branch -M "${targetBranch}"`, { cwd: dir, encoding: 'utf-8' });
+      actualBranch = targetBranch;
     } catch {
       const headBranch = await simpleGit(dir).revparse(['--abbrev-ref', 'HEAD']);
-      actualBranch = headBranch.trim() || 'main';
+      actualBranch = headBranch.trim() || targetBranch;
     }
   }
 
@@ -89,9 +108,27 @@ export async function attachExecute(url: string, dir: string, branch?: string): 
   console.log(`   远程: ${url}`);
   console.log(`   分支: ${actualBranch}`);
 
-  console.log('\n💡 下一步:');
-  console.log(`   1. 添加文件并提交:`);
-  console.log(`      cd ${dir} && git add . && git commit -m "初始化"`);
-  console.log(`   2. 推送到远程:`);
-  console.log(`      git push -u origin ${actualBranch}`);
+  // 检查是否有追踪
+  try {
+    const tracking = execSync('git rev-parse --abbrev-ref @{upstream}', { cwd: dir, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    if (tracking && tracking.startsWith('origin/')) {
+      console.log(`   追踪: ${tracking}`);
+      console.log('\n💡 后续操作:');
+      console.log(`   git mrepo pull ${moduleName}           拉取远程更新`);
+      console.log(`   git mrepo push ${moduleName}           推送本地变更`);
+    } else {
+      console.log('\n💡 后续操作:');
+      console.log(`   1. 添加文件并提交:`);
+      console.log(`      cd ${dir} && git add . && git commit -m "初始化"`);
+      console.log(`   2. 推送到远程:`);
+      console.log(`      git push -u origin ${actualBranch}`);
+    }
+  } catch {
+    // 没有追踪关系
+    console.log('\n💡 后续操作:');
+    console.log(`   1. 添加文件并提交:`);
+    console.log(`      cd ${dir} && git add . && git commit -m "初始化"`);
+    console.log(`   2. 推送到远程:`);
+    console.log(`      git push -u origin ${actualBranch}`);
+  }
 }
