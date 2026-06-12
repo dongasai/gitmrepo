@@ -38,6 +38,7 @@ export async function pushExecute(moduleArg?: string): Promise<void> {
 
   for (const module of modules) {
     console.log(`[${module.name}] ${module.path}:`);
+    console.log(`  分支: ${module.branch}`);
 
     const fullPath = path.isAbsolute(module.path) ? module.path : path.join(root, module.path);
 
@@ -55,16 +56,17 @@ export async function pushExecute(moduleArg?: string): Promise<void> {
 
     if (unpushedCount === 0) {
       console.log('  ✅ 没有需要推送的提交');
-    } else {
-      console.log(`  未推送提交: ${unpushedCount}`);
+      continue;
     }
+
+    console.log(`  未推送提交: ${unpushedCount}`);
 
     try {
       execSync(`git push origin "${module.branch}"`, {
         cwd: fullPath,
         encoding: 'utf-8',
       });
-      console.log(`  ✅ 已推送 ${unpushedCount} 个提交`);
+      console.log(`  ✅ 已推送 (${unpushedCount} commits)`);
     } catch (error) {
       const stderr = (error as any).stderr?.toString() || '未知错误';
       console.log(`  ❌ ${stderr}`);

@@ -3,29 +3,10 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { execSync } from 'node:child_process';
 import { ConfigManager, type Module } from '../config.js';
-import { getGitRoot, updateGitignoreForModule } from '../utils/index.js';
+import { getGitRoot, updateGitignoreForModule, copyDir } from '../utils/index.js';
 
 function deriveModuleName(dir: string): string {
   return dir.replace(/\/$/, '').split('/').pop() || dir;
-}
-
-/**
- * 递归复制目录
- */
-function copyDir(src: string, dest: string): void {
-  if (!fs.existsSync(dest)) {
-    fs.mkdirSync(dest, { recursive: true });
-  }
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
 }
 
 export async function attachExecute(url: string, dir: string, branch?: string): Promise<void> {

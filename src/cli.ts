@@ -16,6 +16,7 @@ import { branchExecute } from './commands/branch.js';
 import { commitExecute } from './commands/commit.js';
 import { configExecute } from './commands/config.js';
 import { cleanExecute } from './commands/clean.js';
+import { diffExecute } from './commands/diff.js';
 
 const program = new Command();
 
@@ -69,6 +70,7 @@ for (const [cmd, desc, fn] of [
   ['push', '推送模块变更', pushExecute],
   ['fetch', '获取远程信息', fetchExecute],
   ['status', '查看模块状态', statusExecute],
+  ['diff', '查看模块改动', diffExecute],
   ['branch', '查看分支信息', branchExecute],
   ['commit', '创建提交', commitExecute],
   ['config', '查看配置', configExecute],

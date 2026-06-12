@@ -1,8 +1,8 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import { ConfigManager, type Module } from '../config.js';
-import { getGitRoot, updateGitignoreForModules, hasUncommittedChanges } from '../utils/index.js';
+import { ConfigManager } from '../config.js';
+import { getGitRoot, updateGitignoreForModules, hasUncommittedChanges, attachDirToRemote } from '../utils/index.js';
 
 /**
  * 执行 sync 命令 - 同步所有模块仓库
@@ -18,7 +18,6 @@ export async function syncExecute(force: boolean): Promise<void> {
   }
 
   const config = ConfigManager.load(configPath);
-  const cm = new ConfigManager();
   const modules = Object.values(config.modules);
 
   if (modules.length === 0) {
@@ -37,6 +36,7 @@ export async function syncExecute(force: boolean): Promise<void> {
 
     const fullPath = path.isAbsolute(module.path) ? module.path : path.join(root, module.path);
     const dirExists = fs.existsSync(fullPath);
+    const gitExists = dirExists && fs.existsSync(path.join(fullPath, '.git'));
 
     if (!dirExists) {
       // 目录不存在，执行 clone
@@ -52,8 +52,32 @@ export async function syncExecute(force: boolean): Promise<void> {
         const stderr = (error as any).stderr?.toString() || '未知错误';
         console.log(`  ❌ 克隆失败: ${stderr}`);
       }
+    } else if (!gitExists) {
+      // 目录存在但无 .git，执行 attach（克隆到临时目录，复制 .git 进来）
+      console.log('  目录存在但无 .git，执行关联...');
+      try {
+        const actualBranch = attachDirToRemote(fullPath, module.remote, module.branch);
+        console.log(`  ✅ 已关联到 ${module.remote} (${actualBranch})`);
+
+        // 检查文件一致性
+        try {
+          const statusOutput = execSync('git status --short', { cwd: fullPath, encoding: 'utf-8' }).trim();
+          if (statusOutput === '') {
+            console.log('  📁 文件完全一致');
+          } else {
+            console.log('  ⚠️  有文件差异:');
+            console.log('  ' + statusOutput.split('\n').join('\n  '));
+          }
+        } catch { /* 忽略一致性检查错误 */ }
+
+        clonedPaths.push(module.path);
+        successCount++;
+      } catch (error) {
+        const msg = (error as any).message || '未知错误';
+        console.log(`  ❌ 关联失败: ${msg}`);
+      }
     } else if (force) {
-      // 目录存在且强制同步
+      // 目录存在且有 .git，强制同步
       console.log('  目录存在，执行 pull...');
       try {
         execSync(`git pull origin "${module.branch}"`, {
@@ -67,7 +91,7 @@ export async function syncExecute(force: boolean): Promise<void> {
         console.log(`  ❌ 拉取失败: ${stderr}`);
       }
     } else {
-      // 目录存在，检查是否有未提交改动
+      // 目录存在且有 .git，检查是否有未提交改动
       try {
         const hasChanges = await hasUncommittedChanges(fullPath);
         if (hasChanges) {
@@ -96,7 +120,7 @@ export async function syncExecute(force: boolean): Promise<void> {
     }
   }
 
-  // 批量更新 .gitignore（新克隆的模块）
+  // 批量更新 .gitignore（新克隆或关联的模块）
   if (clonedPaths.length > 0) {
     updateGitignoreForModules(root, clonedPaths);
   }

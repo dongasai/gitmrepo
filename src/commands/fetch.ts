@@ -56,6 +56,7 @@ export async function fetchExecute(moduleArg?: string): Promise<void> {
         cwd: fullPath,
         encoding: 'utf-8',
       });
+      console.log(`  分支: ${module.branch}`);
       console.log('  ✅ 已获取远程信息');
 
       const remoteNewCommits = countRemoteNewCommits(fullPath, module.branch);
@@ -65,6 +66,7 @@ export async function fetchExecute(moduleArg?: string): Promise<void> {
         console.log('  远程新提交: 0 (已经是最新)');
       }
     } catch (error) {
+      console.log(`  分支: ${module.branch}`);
       const stderr = (error as any).stderr?.toString() || '未知错误';
       console.log(`  ❌ ${stderr}`);
     }

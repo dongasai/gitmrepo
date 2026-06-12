@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { execSync } from 'node:child_process';
 import { ConfigManager, Module } from '../config.js';
 import { getGitRoot, hasUncommittedChanges, countUnpushedCommits } from '../utils/index.js';
 
@@ -34,6 +35,36 @@ export async function statusExecute(moduleArg?: string): Promise<void> {
     modules = Object.values(config.modules);
   }
 
+  // 新增：如果指定了单个模块，显示完整状态
+  if (moduleArg && modules.length === 1) {
+    const module = modules[0];
+    console.log(`📊 模块仓库状态 [${module.name}]:\n`);
+
+    const modulePath = path.isAbsolute(module.path) ? module.path : path.join(root, module.path);
+
+    if (!fs.existsSync(modulePath)) {
+      console.log('⚠️  目录不存在，需要克隆');
+      return;
+    }
+
+    if (!fs.existsSync(path.join(modulePath, '.git'))) {
+      console.log('⚠️  不是 Git 仓库（缺少 .git）');
+      return;
+    }
+
+    try {
+      const output = execSync('git status', {
+        cwd: modulePath,
+        encoding: 'utf-8',
+      });
+      console.log(output);
+    } catch (error: any) {
+      console.log(`❌ ${error.stderr?.toString() || error.message}`);
+    }
+    return;
+  }
+
+  // 原有的简要概览逻辑
   console.log('📊 模块仓库状态:');
 
   for (const module of modules) {

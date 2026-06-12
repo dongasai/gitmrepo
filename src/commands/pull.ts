@@ -53,17 +53,50 @@ export async function pullExecute(moduleArg?: string): Promise<void> {
     }
 
     try {
+      // 记录 pull 前的 HEAD
+      const headBefore = execSync('git rev-parse HEAD', {
+        cwd: fullPath,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      }).trim();
+
       const output = execSync(`git pull origin "${module.branch}"`, {
         cwd: fullPath,
         encoding: 'utf-8',
       });
 
       if (output.includes('Already up to date') || output.includes('Already up-to-date')) {
+        console.log(`  分支: ${module.branch}`);
         console.log('  ✅ 已经是最新的');
       } else {
-        console.log('  ✅ 已更新');
+        // 统计拉取的提交数量
+        const headAfter = execSync('git rev-parse HEAD', {
+          cwd: fullPath,
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe']
+        }).trim();
+
+        let pulledCommits = 0;
+        if (headBefore !== headAfter) {
+          try {
+            pulledCommits = parseInt(
+              execSync(`git rev-list --count ${headBefore}..HEAD`, {
+                cwd: fullPath,
+                encoding: 'utf-8',
+                stdio: ['pipe', 'pipe', 'pipe']
+              }).trim(),
+              10
+            ) || 0;
+          } catch {
+            pulledCommits = 1;
+          }
+        }
+
+        console.log(`  分支: ${module.branch}`);
+        console.log(`  ✅ 已更新 (${pulledCommits} commits pulled)`);
       }
     } catch (error) {
+      console.log(`  分支: ${module.branch}`);
       const stderr = (error as any).stderr?.toString() || '未知错误';
       console.log(`  ❌ ${stderr}`);
     }
