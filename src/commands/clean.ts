@@ -48,6 +48,12 @@ export async function cleanExecute(moduleArg?: string): Promise<void> {
       continue;
     }
 
+    // 检查目录自身是否是 Git 仓库（避免被父级仓库误判）
+    if (!fs.existsSync(path.join(modulePath, '.git'))) {
+      console.log('  ⚠️  不是 Git 仓库（缺少 .git），跳过');
+      continue;
+    }
+
     try {
       // 获取未跟踪文件
       const statusText = execSync('git status --short', {

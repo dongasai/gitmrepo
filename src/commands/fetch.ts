@@ -46,6 +46,11 @@ export async function fetchExecute(moduleArg?: string): Promise<void> {
       continue;
     }
 
+    if (!fs.existsSync(path.join(fullPath, '.git'))) {
+      console.log('  ⚠️  不是 Git 仓库（缺少 .git），跳过');
+      continue;
+    }
+
     try {
       execSync('git fetch origin', {
         cwd: fullPath,

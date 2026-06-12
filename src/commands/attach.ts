@@ -16,13 +16,12 @@ export async function attachExecute(url: string, dir: string, branch?: string): 
     throw new Error(`目录不存在: ${dir}`);
   }
 
-  // 检查是否已是 Git 仓库
-  try {
-    await simpleGit(dir).status();
+  // 检查是否已是 Git 仓库（检查目录自身，避免被父级仓库误判）
+  if (fs.existsSync(path.join(dir, '.git'))) {
     console.log('⚠️  目录已经是 Git 仓库');
     console.log(`   如果想注册已有仓库，请使用: git mrepo add ${dir}`);
     return;
-  } catch { /* 不是 Git 仓库，继续 */ }
+  }
 
   console.log('🔗 关联目录到远程仓库...\n');
 

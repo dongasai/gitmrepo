@@ -15,6 +15,11 @@ export async function addExecute(dir: string): Promise<void> {
     throw new Error(`目录不存在: ${dir}`);
   }
 
+  // 检查目录自身是否是 Git 仓库（避免被父级仓库误判）
+  if (!fs.existsSync(path.join(dir, '.git'))) {
+    throw new Error(`目录不是 Git 仓库: ${dir}\n请先在该目录执行 git init，或使用 attach 命令`);
+  }
+
   console.log('🔍 自动识别 Git 仓库信息...');
 
   const git = simpleGit(dir);
