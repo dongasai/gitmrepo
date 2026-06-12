@@ -72,36 +72,45 @@ git mrepo pull modules/auth
 
 ## 实现原理
 
-```rust
-pub fn pull(module: Option<String>) -> Result<()> {
-    let config = Config::load(".gitmrepo")?;
+```typescript
+export async function pullExecute(moduleArg?: string): Promise<void> {
+  const root = getGitRoot();
+  const configPath = path.join(root, '.gitmrepo');
 
-    let modules = if let Some(name) = module {
-        vec![config.find_module(&name)?]
-    } else {
-        config.modules.clone()
-    };
+  const config = ConfigManager.load(configPath);
+  const cm = new ConfigManager();
 
-    for m in modules {
-        println!("[{}] {}:", m.name, m.path);
+  // 确定模块列表
+  const modules: Module[] = moduleArg
+    ? [cm.findModule(config, moduleArg)!]
+    : Object.values(config.modules);
 
-        // 获取当前分支
-        let branch = get_current_branch(&m.path)?;
+  console.log('🔄 拉取模块仓库更新...');
 
-        // 执行 git pull
-        let output = Command::new("git")
-            .current_dir(&m.path)
-            .args(&["pull", "origin", &branch])
-            .output()?;
+  for (const module of modules) {
+    console.log(`[${module.name}] ${module.path}:`);
+    console.log(`  分支: ${module.branch}`);
 
-        if output.status.success() {
-            println!("  ✅ {}", String::from_utf8_lossy(&output.stdout));
-        } else {
-            println!("  ❌ {}", String::from_utf8_lossy(&output.stderr));
-        }
+    const fullPath = path.join(root, module.path);
+
+    try {
+      const output = execSync(`git pull origin "${module.branch}"`, {
+        cwd: fullPath,
+        encoding: 'utf-8',
+      });
+
+      if (output.includes('Already up to date') || output.includes('Already up-to-date')) {
+        console.log('  ✅ 已经是最新的');
+      } else {
+        // 统计拉取的提交数量
+        const pulledCommits = countPulledCommits(fullPath, module.branch);
+        console.log(`  ✅ 已更新 (${pulledCommits} commits pulled)`);
+      }
+    } catch (error) {
+      const stderr = (error as any).stderr?.toString() || '未知错误';
+      console.log(`  ❌ ${stderr}`);
     }
-
-    Ok(())
+  }
 }
 ```
 
@@ -164,47 +173,48 @@ git mrepo push auth-service
 
 ## 实现原理
 
-```rust
-pub fn push(module: Option<String>) -> Result<()> {
-    let config = Config::load(".gitmrepo")?;
+```typescript
+export async function pushExecute(moduleArg?: string): Promise<void> {
+  const root = getGitRoot();
+  const configPath = path.join(root, '.gitmrepo');
 
-    let modules = if let Some(name) = module {
-        vec![config.find_module(&name)?]
-    } else {
-        config.modules.clone()
-    };
+  const config = ConfigManager.load(configPath);
+  const cm = new ConfigManager();
 
-    for m in modules {
-        println!("[{}] {}:", m.name, m.path);
+  // 确定模块列表
+  const modules: Module[] = moduleArg
+    ? [cm.findModule(config, moduleArg)!]
+    : Object.values(config.modules);
 
-        // 获取当前分支
-        let branch = get_current_branch(&m.path)?;
+  console.log('🔄 推送模块仓库变更...');
 
-        // 检查是否有未推送提交
-        let repo = git2::Repository::open(&m.path)?;
-        let unpushed = count_unpushed_commits(&repo)?;
+  for (const module of modules) {
+    console.log(`[${module.name}] ${module.path}:`);
+    console.log(`  分支: ${module.branch}`);
 
-        if unpushed == 0 {
-            println!("  ✅ 没有需要推送的提交");
-            continue;
-        }
+    const fullPath = path.join(root, module.path);
 
-        println!("  未推送提交: {}", unpushed);
+    // 检查是否有未推送提交
+    const unpushedCount = countUnpushedCommits(fullPath, module.branch);
 
-        // 执行 git push
-        let output = Command::new("git")
-            .current_dir(&m.path)
-            .args(&["push", "origin", &branch])
-            .output()?;
-
-        if output.status.success() {
-            println!("  ✅ 已推送 ({})", unpushed);
-        } else {
-            println!("  ❌ {}", String::from_utf8_lossy(&output.stderr));
-        }
+    if (unpushedCount === 0) {
+      console.log('  ✅ 没有需要推送的提交');
+      continue;
     }
 
-    Ok(())
+    console.log(`  未推送提交: ${unpushedCount}`);
+
+    try {
+      execSync(`git push origin "${module.branch}"`, {
+        cwd: fullPath,
+        encoding: 'utf-8',
+      });
+      console.log(`  ✅ 已推送 (${unpushedCount} commits)`);
+    } catch (error) {
+      const stderr = (error as any).stderr?.toString() || '未知错误';
+      console.log(`  ❌ ${stderr}`);
+    }
+  }
 }
 ```
 
@@ -269,61 +279,64 @@ git mrepo fetch auth-service
 
 ## 实现原理
 
-```rust
-pub fn fetch(module: Option<String>) -> Result<()> {
-    let config = Config::load(".gitmrepo")?;
+```typescript
+export async function fetchExecute(moduleArg?: string): Promise<void> {
+  const root = getGitRoot();
+  const configPath = path.join(root, '.gitmrepo');
 
-    let modules = if let Some(name) = module {
-        vec![config.find_module(&name)?]
-    } else {
-        config.modules.clone()
-    };
+  const config = ConfigManager.load(configPath);
+  const cm = new ConfigManager();
 
-    for m in modules {
-        println!("[{}] {}:", m.name, m.path);
+  // 确定模块列表
+  const modules: Module[] = moduleArg
+    ? [cm.findModule(config, moduleArg)!]
+    : Object.values(config.modules);
 
-        // 执行 git fetch
-        let output = Command::new("git")
-            .current_dir(&m.path)
-            .args(&["fetch", "origin"])
-            .output()?;
+  console.log('🔄 获取模块仓库远程信息...');
 
-        if output.status.success() {
-            println!("  ✅ 已获取远程信息");
+  for (const module of modules) {
+    console.log(`[${module.name}] ${module.path}:`);
 
-            // 检查远程新提交数量
-            let repo = git2::Repository::open(&m.path)?;
-            let new_commits = count_remote_new_commits(&repo)?;
+    const fullPath = path.join(root, module.path);
 
-            if new_commits > 0 {
-                println!("  远程新提交: {}", new_commits);
-            } else {
-                println!("  远程新提交: 0 (已经是最新)");
-            }
-        } else {
-            println!("  ❌ {}", String::from_utf8_lossy(&output.stderr));
-        }
+    try {
+      execSync('git fetch origin', { cwd: fullPath });
+      console.log('  ✅ 已获取远程信息');
+
+      // 检查远程新提交数量
+      const newCommits = countRemoteNewCommits(fullPath, module.branch);
+
+      if (newCommits > 0) {
+        console.log(`  远程新提交: ${newCommits}`);
+      } else {
+        console.log('  远程新提交: 0 (已经是最新)');
+      }
+    } catch (error) {
+      const stderr = (error as any).stderr?.toString() || '未知错误';
+      console.log(`  ❌ ${stderr}`);
     }
-
-    Ok(())
+  }
 }
 
-fn count_remote_new_commits(repo: &git2::Repository) -> Result<usize> {
-    let head = repo.head()?;
-    let local_oid = head.target()?;
-
-    let branch_name = head.shorthand()?;
-    let remote_branch = repo.find_branch(
-        &format!("origin/{}", branch_name),
-        BranchType::Remote
-    )?;
-    let remote_oid = remote_branch.get().target()?;
-
-    let mut revwalk = repo.revwalk()?;
-    revwalk.push(remote_oid)?;
-    revwalk.hide(local_oid)?;
-
-    Ok(revwalk.count())
+/**
+ * 统计远程新提交数量
+ */
+export function countRemoteNewCommits(repoPath: string, branch: string): number {
+  if (!fs.existsSync(path.join(repoPath, '.git'))) {
+    return 0;
+  }
+  try {
+    return parseInt(
+      execSync(`git rev-list --count ${branch}..origin/${branch}`, {
+        cwd: repoPath,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      }).trim(),
+      10
+    ) || 0;
+  } catch {
+    return 0;
+  }
 }
 ```
 

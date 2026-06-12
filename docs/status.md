@@ -98,70 +98,15 @@ git mrepo status modules/auth
 
 ## 执行流程
 
-```rust
-pub fn status(module: Option<String>) -> Result<()> {
-    let config = Config::load(".gitmrepo")?;
-
-    // 确定要查看的模块列表
-    let modules = if let Some(name) = module {
-        vec![config.find_module(&name)?]
-    } else {
-        config.modules.clone()
-    };
-
-    for module in modules {
-        println!("[{}] {}:", module.name, module.path);
-
-        // 1. 查看分支
-        let branch_output = Command::new("git")
-            .current_dir(&module.path)
-            .args(&["branch", "--show-current"])
-            .output()?;
-
-        println!("  分支: {}", String::from_utf8_lossy(&branch_output.stdout));
-
-        // 2. 查看状态
-        let status_output = Command::new("git")
-            .current_dir(&module.path)
-            .args(&["status", "--short"])
-            .output()?;
-
-        if status_output.stdout.is_empty() {
-            println!("  状态: clean ✓");
-        } else {
-            println!("  未提交改动:");
-            println!("{}", String::from_utf8_lossy(&status_output.stdout));
-        }
-
-        // 3. 查看未推送提交（使用 git2）
-        let repo = git2::Repository::open(&module.path)?;
-        let unpushed = count_unpushed_commits(&repo)?;
-
-        if unpushed > 0 {
-            println!("  未推送提交: {}", unpushed);
-        }
-    }
-
-    Ok(())
-}
-
-fn count_unpushed_commits(repo: &git2::Repository) -> Result<usize> {
-    let head = repo.head()?;
-    let local_oid = head.target()?;
-
-    let remote = repo.find_remote("origin")?;
-    let remote_branch = repo.find_branch(
-        &format!("origin/{}", head.shorthand()?),
-        BranchType::Remote
-    )?;
-    let remote_oid = remote_branch.get().target()?;
-
-    let mut revwalk = repo.revwalk()?;
-    revwalk.push(local_oid)?;
-    revwalk.hide(remote_oid)?;
-
-    Ok(revwalk.count())
-}
+```
+1. 加载 .gitmrepo 配置文件
+2. 确定要查看的模块列表（单个或全部）
+3. 遍历每个模块，执行以下检查：
+   a. 检查目录是否存在
+   b. 获取当前分支名称（git branch --show-current）
+   c. 检查工作目录状态（git status --short）
+   d. 统计未推送提交数（对比本地 HEAD 与远程分支）
+4. 输出状态信息
 ```
 
 ## 配置影响
