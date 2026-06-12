@@ -3,8 +3,8 @@ import { execSync } from 'node:child_process';
 
 export function updateGitignoreForModule(root: string, modulePath: string): void {
   const gitignorePath = `${root}/.gitignore`;
-  const entry = `${modulePath}.git/`;
-  const entryNoSlash = `${modulePath}.git`;
+  const entry = `${modulePath}/.git/`;
+  const entryNoSlash = `${modulePath}/.git`;
 
   if (!fs.existsSync(gitignorePath)) {
     fs.writeFileSync(gitignorePath, `# git-mrepo 子模块 .git 目录（主仓库忽略子仓库的 Git 管理）\n${entry}\n`);
