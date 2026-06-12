@@ -1,4 +1,7 @@
 import { Command } from 'commander';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 import { initExecute } from './commands/init.js';
 import { cloneExecute } from './commands/clone.js';
 import { addExecute } from './commands/add.js';
@@ -19,7 +22,7 @@ const program = new Command();
 program
   .name('git-mrepo')
   .description('Git 模块化仓库管理工具')
-  .version('1.0.0');
+  .version(version);
 
 async function wrap(fn: () => Promise<void>) {
   try { await fn(); } catch (e: any) { console.error(`❌ ${e.message}`); process.exit(1); }
