@@ -1,12 +1,31 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { execSync } from 'node:child_process';
 import { ConfigManager, type Module } from '../config.js';
 import { getGitRoot, updateGitignoreForModule } from '../utils/index.js';
-import simpleGit from 'simple-git';
 
 function deriveModuleName(dir: string): string {
   return dir.replace(/\/$/, '').split('/').pop() || dir;
+}
+
+/**
+ * 递归复制目录
+ */
+function copyDir(src: string, dest: string): void {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 }
 
 export async function attachExecute(url: string, dir: string, branch?: string): Promise<void> {
@@ -25,65 +44,60 @@ export async function attachExecute(url: string, dir: string, branch?: string): 
 
   console.log('🔗 关联目录到远程仓库...\n');
 
-  // git init
-  console.log('初始化 Git 仓库...');
+  // 1. 克隆到临时目录
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'git-mrepo-attach-'));
+  console.log(`克隆远程仓库到临时目录...`);
   try {
-    execSync('git init', { cwd: dir, encoding: 'utf-8' });
+    const cloneCmd = branch
+      ? `git clone -b "${branch}" "${url}" "${tempDir}"`
+      : `git clone "${url}" "${tempDir}"`;
+    execSync(cloneCmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
   } catch (e: any) {
-    throw new Error(`git init 失败: ${e.stderr?.toString() || e.message}`);
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    throw new Error(`克隆失败: ${e.stderr?.toString() || e.message}`);
   }
 
-  // git remote add
-  console.log(`添加远程仓库: ${url}`);
-  try {
-    execSync(`git remote add origin "${url}"`, { cwd: dir, encoding: 'utf-8' });
-  } catch (e: any) {
-    throw new Error(`git remote add 失败: ${e.stderr?.toString() || e.message}`);
-  }
-
-  // fetch 远程
-  console.log('获取远程信息...');
-  try {
-    execSync('git fetch origin', { cwd: dir, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
-  } catch (e: any) {
-    // fetch 失败可能是远程不存在或网络问题，继续尝试本地分支
-    console.log(`   ⚠️  fetch 失败: ${e.stderr?.toString() || e.message}`);
-  }
-
-  // 设置分支（尝试追踪远程分支）
+  // 2. 获取实际分支
   let actualBranch: string;
-  const targetBranch = branch || 'main';
-
-  // 检查远程是否有该分支
   try {
-    const remoteBranches = execSync('git branch -r', { cwd: dir, encoding: 'utf-8' }).trim();
-    const hasRemoteBranch = remoteBranches.includes(`origin/${targetBranch}`);
-
-    if (hasRemoteBranch) {
-      console.log(`检出远程分支: ${targetBranch}`);
-      execSync(`git checkout -b "${targetBranch}" --track "origin/${targetBranch}"`, { cwd: dir, encoding: 'utf-8' });
-      actualBranch = targetBranch;
-    } else {
-      // 远程没有该分支，创建本地分支
-      console.log(`创建本地分支: ${targetBranch}`);
-      execSync(`git checkout -b "${targetBranch}"`, { cwd: dir, encoding: 'utf-8' });
-      actualBranch = targetBranch;
-    }
-  } catch (e: any) {
-    // fallback: 直接创建本地分支
-    console.log(`   ⚠️  分支操作失败，创建默认分支: ${targetBranch}`);
-    try {
-      execSync(`git branch -M "${targetBranch}"`, { cwd: dir, encoding: 'utf-8' });
-      actualBranch = targetBranch;
-    } catch {
-      const headBranch = await simpleGit(dir).revparse(['--abbrev-ref', 'HEAD']);
-      actualBranch = headBranch.trim() || targetBranch;
-    }
+    actualBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: tempDir, encoding: 'utf-8' }).trim();
+  } catch {
+    actualBranch = branch || 'main';
   }
 
-  console.log(`当前分支: ${actualBranch}`);
+  console.log(`   远程分支: ${actualBranch}`);
 
-  // 注册到配置
+  // 3. 复制 .git 目录到目标目录
+  console.log(`复制 .git 目录到 ${dir}...`);
+  const gitDirSrc = path.join(tempDir, '.git');
+  const gitDirDest = path.join(dir, '.git');
+  try {
+    copyDir(gitDirSrc, gitDirDest);
+  } catch (e: any) {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    throw new Error(`复制 .git 失败: ${e.message}`);
+  }
+
+  // 4. 清理临时目录
+  fs.rmSync(tempDir, { recursive: true, force: true });
+
+  // 5. 检查文件一致性
+  console.log('检查文件一致性...');
+  let statusOutput: string;
+  try {
+    statusOutput = execSync('git status --short', { cwd: dir, encoding: 'utf-8' }).trim();
+  } catch (e: any) {
+    throw new Error(`git status 失败: ${e.stderr?.toString() || e.message}`);
+  }
+
+  if (statusOutput === '') {
+    console.log('✅ 文件完全一致');
+  } else {
+    console.log('⚠️  有文件差异:');
+    console.log(statusOutput);
+  }
+
+  // 6. 注册到配置
   const moduleName = deriveModuleName(dir);
   console.log('\n注册到配置文件...');
 
@@ -94,41 +108,23 @@ export async function attachExecute(url: string, dir: string, branch?: string): 
     return ConfigManager.create();
   })();
 
-  const module: Module = { name: moduleName, path: dir, remote: url, branch: actualBranch, auto_sync: true };
+  const module: Module = { name: moduleName, path: dir, remote: url, branch: actualBranch };
   cm.addModule(config, module);
   cm.save(configPath, config);
   console.log('✅ 已注册到 .gitmrepo');
 
-  console.log('更新 .gitignore...');
+  // 7. 更新 .gitignore
   updateGitignoreForModule(root, dir);
   console.log(`✅ 已更新 .gitignore（忽略 ${dir}/.git/）`);
 
+  // 8. 输出结果
   console.log('\n✅ 关联完成');
   console.log(`   目录: ${dir}`);
   console.log(`   远程: ${url}`);
   console.log(`   分支: ${actualBranch}`);
+  console.log(`   状态: ${statusOutput === '' ? '文件完全一致' : '有文件差异'}`);
 
-  // 检查是否有追踪
-  try {
-    const tracking = execSync('git rev-parse --abbrev-ref @{upstream}', { cwd: dir, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-    if (tracking && tracking.startsWith('origin/')) {
-      console.log(`   追踪: ${tracking}`);
-      console.log('\n💡 后续操作:');
-      console.log(`   git mrepo pull ${moduleName}           拉取远程更新`);
-      console.log(`   git mrepo push ${moduleName}           推送本地变更`);
-    } else {
-      console.log('\n💡 后续操作:');
-      console.log(`   1. 添加文件并提交:`);
-      console.log(`      cd ${dir} && git add . && git commit -m "初始化"`);
-      console.log(`   2. 推送到远程:`);
-      console.log(`      git push -u origin ${actualBranch}`);
-    }
-  } catch {
-    // 没有追踪关系
-    console.log('\n💡 后续操作:');
-    console.log(`   1. 添加文件并提交:`);
-    console.log(`      cd ${dir} && git add . && git commit -m "初始化"`);
-    console.log(`   2. 推送到远程:`);
-    console.log(`      git push -u origin ${actualBranch}`);
+  if (statusOutput !== '') {
+    console.log('\n💡 提示：请检查差异，确认后可以提交');
   }
 }
