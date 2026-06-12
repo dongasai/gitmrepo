@@ -82,7 +82,7 @@ export async function attachExecute(url: string, dir: string, branch?: string): 
 
   console.log('更新 .gitignore...');
   updateGitignoreForModule(root, dir);
-  console.log(`✅ 已更新 .gitignore（忽略 ${dir}.git/）`);
+  console.log(`✅ 已更新 .gitignore（忽略 ${dir}/.git/）`);
 
   console.log('\n✅ 关联完成');
   console.log(`   目录: ${dir}`);

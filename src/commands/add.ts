@@ -52,7 +52,7 @@ export async function addExecute(dir: string): Promise<void> {
 
   console.log('✅ 已注册到 .gitmrepo');
   updateGitignoreForModule(root, dir);
-  console.log(`✅ 已更新 .gitignore（忽略 ${dir}.git/）`);
+  console.log(`✅ 已更新 .gitignore（忽略 ${dir}/.git/）`);
 
   console.log('\n💡 后续操作:');
   console.log(`   git mrepo status ${moduleName}         查看模块状态`);

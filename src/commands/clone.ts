@@ -54,7 +54,7 @@ export async function cloneExecute(url: string, dir?: string, branch?: string): 
 
   console.log('✅ 已注册到 .gitmrepo');
   updateGitignoreForModule(root, modulePath);
-  console.log(`✅ 已更新 .gitignore（忽略 ${modulePath}.git/）`);
+  console.log(`✅ 已更新 .gitignore（忽略 ${modulePath}/.git/）`);
 
   console.log('\n💡 后续操作:');
   console.log(`   git mrepo status ${moduleName}         查看模块状态`);
