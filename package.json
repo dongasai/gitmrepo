@@ -1,6 +1,6 @@
 {
   "name": "git-mrepo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Git 模块化仓库管理工具",
   "type": "module",
   "bin": {
@@ -10,7 +10,7 @@
     "dist/"
   ],
   "scripts": {
-    "build": "npm version patch --no-git-tag-version && tsup",
+    "build": "npm version patch --no-git-tag-version && tsup && npm link",
     "dev": "tsc --watch"
   },
   "dependencies": {
