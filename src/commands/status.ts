@@ -80,6 +80,12 @@ export async function statusExecute(moduleArg?: string): Promise<void> {
       continue;
     }
 
+    // 检查 .git 目录是否存在
+    if (!fs.existsSync(path.join(modulePath, '.git'))) {
+      console.log('  ⚠️  不是 Git 仓库（缺少 .git）');
+      continue;
+    }
+
     // 检查未提交改动
     const hasChanges = await hasUncommittedChanges(modulePath);
     if (hasChanges) {
