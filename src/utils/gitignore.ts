@@ -35,3 +35,36 @@ export function getGitRoot(): string {
     throw new Error('当前目录不是 Git 仓库');
   }
 }
+
+/**
+ * 从 .gitignore 移除模块的 .git 目录条目
+ */
+export function removeGitignoreForModule(root: string, modulePath: string): void {
+  const gitignorePath = `${root}/.gitignore`;
+  const entry = `${modulePath}/.git/`;
+  const entryNoSlash = `${modulePath}/.git`;
+
+  // .gitignore 不存在，静默跳过
+  if (!fs.existsSync(gitignorePath)) return;
+
+  let content = fs.readFileSync(gitignorePath, 'utf-8');
+  const lines = content.split('\n');
+
+  // 过滤掉模块对应的条目
+  const filteredLines = lines.filter(line => {
+    const trimmed = line.trim();
+    return trimmed !== entry && trimmed !== entryNoSlash;
+  });
+
+  // 移除空的 git-mrepo 注释块（注释后没有模块条目）
+  let cleanedContent = filteredLines.join('\n');
+
+  // 移除空的 git-mrepo 注释块（注释后没有模块条目）
+  const gitmrepoBlockRegex = /# git-mrepo 子模块 .git 目录.*?\n\n/g;
+  cleanedContent = cleanedContent.replace(gitmrepoBlockRegex, '');
+
+  // 清理末尾多余空行
+  cleanedContent = cleanedContent.replace(/\n+$/, '\n');
+
+  fs.writeFileSync(gitignorePath, cleanedContent);
+}

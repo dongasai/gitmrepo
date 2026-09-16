@@ -1,30 +1,33 @@
 {
-  "name": "git-mrepo",
-  "version": "1.0.9",
-  "description": "Git 模块化仓库管理工具",
-  "type": "module",
-  "bin": {
-    "git-mrepo": "./dist/cli.js"
-  },
-  "files": [
-    "dist/"
-  ],
-  "scripts": {
-    "build": "npm version patch --no-git-tag-version && tsup && npm link",
-    "dev": "tsc --watch"
-  },
-  "dependencies": {
-    "commander": "^12.1.0",
-    "js-yaml": "^4.1.0",
-    "simple-git": "^3.25.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.5.0",
-    "tsup": "^8.1.0",
-    "@types/node": "^20.14.0",
-    "@types/js-yaml": "^4.0.9"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+    "name": "git-mrepo",
+    "version": "1.0.27",
+    "description": "Git 模块化仓库管理工具",
+    "type": "module",
+    "bin": {
+        "git-mrepo": "./dist/cli.js"
+    },
+    "files": [
+        "dist/"
+    ],
+    "scripts": {
+        "build": "npm version patch --no-git-tag-version && tsup && npm link",
+        "dev": "tsc --watch",
+        "publish": "npm login --registry https://registry.npmjs.org/ && npm publish --registry https://registry.npmjs.org/ && sleep 50 &&  npm install -g git-mrepo"
+    },
+    "dependencies": {
+        "commander": "^12.1.0",
+        "js-yaml": "^4.1.0",
+        "prompts": "^2.4.2",
+        "simple-git": "^3.25.0"
+    },
+    "devDependencies": {
+        "@types/js-yaml": "^4.0.9",
+        "@types/node": "^20.14.0",
+        "@types/prompts": "^2.4.9",
+        "tsup": "^8.1.0",
+        "typescript": "^5.5.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
 }
