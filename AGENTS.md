@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## 项目概述
 
@@ -21,10 +21,9 @@ npm link
 # 运行
 git mrepo <command>
 
-# 发版
-npm version patch  # 0.1.0 → 0.1.1
+# 发版（build 已内含 version patch + tsup + npm link）
 npm run build
-npm publish
+npm run publish
 ```
 
 ## 核心架构
@@ -43,22 +42,28 @@ npm publish
 src/
 ├── cli.ts              # CLI 入口，commander 定义所有命令
 ├── config.ts           # ConfigManager 类，YAML 配置读写
-├── commands/           # 14 个命令实现
+├── commands/           # 17 个命令实现
 │   ├── init.ts         # 初始化 .gitmrepo
 │   ├── clone.ts        # 克隆模块仓库
 │   ├── add.ts          # 注册已有 Git 仓库
 │   ├── attach.ts       # 关联目录到远程
+│   ├── remove.ts       # 取消注册 / 删除模块目录
+│   ├── fix.ts          # 交互式检测并修复异常模块
 │   ├── sync.ts         # 批量同步（clone + pull）
 │   ├── sync2.ts        # 从子仓库同步回配置
 │   ├── pull/push/fetch.ts
 │   ├── status.ts       # 查看模块状态
 │   ├── branch.ts       # 查看分支
 │   ├── commit.ts       # 提交检查
+│   ├── diff.ts         # 查看模块改动
 │   ├── config.ts       # 查看配置
 │   └── clean.ts        # 清理未跟踪文件
 └── utils/
     ├── gitignore.ts    # .gitignore 自动更新
-    └── git.ts          # Git 辅助（未提交检查、未推送统计）
+    ├── git.ts          # Git 辅助（关联的 attachDirToRemote、未提交检查、未推送统计）
+    ├── file-stats.ts   # 统计目录下的文件数与体积
+    ├── module-health.ts # 模块体检：detectModuleIssues / isGitDirectoryHealthy
+    └── index.ts        # 工具统一出口
 ```
 
 ### 配置文件 (.gitmrepo)
@@ -87,7 +92,7 @@ settings:
 
 clone、add、attach、sync 命令自动在 .gitignore 中添加 `<modulePath>.git/`，使主仓库忽略子仓库的 .git 目录。
 
-## 已实现命令（14个）
+## 已实现命令（17个）
 
 | 命令 | 参数 | 说明 |
 |------|------|------|
@@ -105,6 +110,27 @@ clone、add、attach、sync 命令自动在 .gitignore 中添加 `<modulePath>.g
 | commit | `[module]` | 检查暂存状态，提示手动提交 |
 | config | `[module]` | 查看配置信息 |
 | clean | `[module]` | 检查未跟踪文件，提供清理命令 |
+| diff | `[module]` | 查看模块改动 |
+| remove | `[module] [-f] [--skip-check]` | 取消模块注册，`-f` 直接删除物理目录 |
+| fix | `[module] [--batch]` | 体检 + 修复异常模块（克隆 / 关联） |
+
+## 模块体检机制
+
+`status` 和 `fix` 共用 `src/utils/module-health.ts` 的检测逻辑：
+
+| 问题类型 | 严重级别 | 触发条件 |
+|----------|----------|----------|
+| `missing_directory` | critical | 模块目录不存在 |
+| `missing_git` | warning | 目录存在但没有 `.git` |
+| `git_corrupted` | critical | `.git` 缺 `HEAD`/`config`，或 `git rev-parse --git-dir` 失败 |
+
+`fix --batch` 只自动修复 **warning** 级别问题；出现 critical 时打印清单并提示改用交互模式 `git mrepo fix`。
+
+## 文档约定
+
+- 每个命令在 `docs/` 下有同名 Markdown 文档（如 `docs/fix.md`），索引见 `docs/README.md`
+- 文档结构：用途 → 使用方法 → 参数表格 → 使用示例 → 执行流程 → 输出示例 → 实现要点 → 注意事项 → 与其他命令对比
+- 命令文档与实际实现不一致时，以 `src/commands/*.ts` 为准，并同步修正文档
 
 ## 重要设计决策
 

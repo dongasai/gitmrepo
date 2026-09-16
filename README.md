@@ -2,6 +2,22 @@
 
 > 解决模块化开发中,`模块仓库`和`项目仓库`的关联问题
 
+## 安装
+
+```bash
+npm install -g git-mrepo
+```
+
+### 从源码构建
+
+```bash
+git clone https://github.com/your-org/git-mrepo.git
+cd git-mrepo
+npm install
+npm run build
+npm link  # 本地开发
+```
+
 ## 核心特性
 
 1. 主仓库和子仓库没有直接git关系,独立性很强,通过本工具进行关联
@@ -135,22 +151,6 @@ settings:
    - 模块仓库：在模块目录内独立管理自己的 Git 状态
 4. **同步操作**: `pull/push/fetch` 等命令操作模块仓库的 Git 状态
 5. **状态查看**: `status` 同时显示主仓库和模块仓库的状态
-
-## 安装
-
-```bash
-npm install -g git-mrepo
-```
-
-### 从源码构建
-
-```bash
-git clone https://github.com/your-org/git-mrepo.git
-cd git-mrepo
-npm install
-npm run build
-npm link  # 本地开发
-```
 
 ## 技术实现
 
